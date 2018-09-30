@@ -116,22 +116,23 @@ def stump(dataset, index_to_split, local_depth, parent_node, maximum_depth, node
 			node.set_probas(probs)
 			node.set_depth(local_depth)
 			node_list.append(node)
-			print("max_depth", maximum_depth)
+			#print("max_depth", maximum_depth)
 			if list_mutual_info[index] > 0 and local_depth < maximum_depth:
 				node_list = stump(new_dataset, index,local_depth,node,maximum_depth,node_list)
 	return node_list
 
-def predict(line, node, header):
-	if len(node.get_rules().keys()) == 0:
+def predict(line, node, header,maximum_depth):
+	#print(maximum_depth)
+	if len(node.get_rules().keys()) == 0 or maximum_depth == 0:
 		prediction = inspect1.majority_class(node.get_probas())
 		return prediction
 	else:
 		#print("Ma valeur de ", header[node.get_attribute()], " est ", line[node.get_attribute()])
 		next_node = node.get_next_node(line[node.get_attribute()])
-		prediction = predict(line,next_node,header)
+		prediction = predict(line,next_node,header,maximum_depth)
 		return prediction
 
-dataset_path = ".\\handout\\politicians_train.csv"
+dataset_path = ".\\handout\\education_train.csv"
 to_split = -1
 max_depth = 0
 local_depth = 0
@@ -155,28 +156,31 @@ while max_depth < num_iterations:
 	node_list=[]
 	sum = 0
 	sum_wrong = 0
-	test_path = ".\\handout\\politicians_test.csv"
+	test_path = ".\\handout\\education_test.csv"
 	data_test = inspect1.loadCSV(test_path)
 	error_rate = 0
 	for i_line, line in enumerate(data_test):
-		prediction_value = predict(line, tree[0],header)
+		prediction_value = predict(line, tree[0],header,max_depth)
 		if prediction_value != line[len(line)-1]:
 			sum_wrong += 1
 		sum+=1
 	error_rate = sum_wrong/sum
-	print("error_rate pour max_depth = ", max_depth," : ", error_rate)
+	print("Test error_rate pour max_depth = ", max_depth," : ", error_rate)
 	table_error_test.append(error_rate)
 	
-	test_path = ".\\handout\\politicians_train.csv"
+	node_list=[]
+	sum = 0
+	sum_wrong = 0
+	test_path = ".\\handout\\education_train.csv"
 	data_test = inspect1.loadCSV(test_path)
 	error_rate = 0
 	for i_line, line in enumerate(data_test):
-		prediction_value = predict(line, tree[0],header)
+		prediction_value = predict(line, tree[0],header,max_depth)
 		if prediction_value != line[len(line)-1]:
 			sum_wrong += 1
 		sum+=1
 	error_rate = sum_wrong/sum
-	print("error_rate pour max_depth = ", max_depth," : ", error_rate)
+	print("Train error_rate pour max_depth = ", max_depth," : ", error_rate)
 	table_error_train.append(error_rate)
 	
 	max_depth += 1
@@ -187,6 +191,6 @@ plt.plot(table_error_test,label='Test error')
 plt.xlabel("Depth")
 plt.ylabel("Error rate")
 plt.title("Errors for training and test sets")
-plt.ylim([0,0.4])
+plt.ylim([0,0.55])
 plt.legend()
 plt.show()
